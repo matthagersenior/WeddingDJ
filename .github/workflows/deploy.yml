@@ -2,11 +2,6 @@ name: Deploy WeddingDJ
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'src/worker.ts'
-      - '.github/workflows/deploy.yml'
 
 concurrency:
   group: weddingdj-production
@@ -44,10 +39,19 @@ jobs:
         run: |
           set -euo pipefail
           BASE='https://weddingdj.matthagersr.workers.dev'
+          ready=0
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS "$BASE/e/michael-marisa" >/tmp/guest.html \
+              && grep -q 'data-carousel="hero"' /tmp/guest.html \
+              && grep -q 'data-carousel="gallery"' /tmp/guest.html; then
+              ready=1
+              break
+            fi
+            echo "Waiting for new Worker version to propagate (attempt $attempt/10)..."
+            sleep 3
+          done
+          [ "$ready" = "1" ]
           curl --retry 10 --retry-all-errors --retry-delay 2 -fsS "$BASE/health" >/tmp/health.json
-          curl --retry 10 --retry-all-errors --retry-delay 2 -fsS "$BASE/e/michael-marisa" >/tmp/guest.html
-          grep -q 'data-carousel="hero"' /tmp/guest.html
-          grep -q 'data-carousel="gallery"' /tmp/guest.html
           for i in 0 1 2 3 4 5; do
             curl --retry 10 --retry-all-errors --retry-delay 2 -fsS -o /dev/null "$BASE/media/wedding/$i.jpeg"
           done
