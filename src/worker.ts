@@ -36,7 +36,7 @@ async function runtimeDiagnostic(env: Env): Promise<Response> {
     const enc = new TextEncoder();
     const key = await crypto.subtle.importKey('raw', enc.encode('diagnostic-password'), { name: 'PBKDF2' }, false, ['deriveBits']);
     const bits = await crypto.subtle.deriveBits(
-      { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(`diagnostic-salt:${env.SESSION_SECRET}`), iterations: 150_000 },
+      { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(`diagnostic-salt:${env.SESSION_SECRET}`), iterations: 100_000 },
       key,
       256,
     );

@@ -134,7 +134,7 @@ function shortCode() {
 async function hashPassword(password: string, salt: string, secret: string) {
   const raw = await crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(`${salt}:${secret}`), iterations: 150_000 },
+    { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(`${salt}:${secret}`), iterations: 100_000 },
     raw,
     256,
   );
