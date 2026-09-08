@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "weddingdj",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-08",
+  "workers_dev": true,
+  "vars": {
+    "APP_URL": "http://localhost:8787",
+    "CASHAPP_URL": "",
+    "CASHAPP_QR_IMAGE_URL": "",
+    "SQUARE_ENVIRONMENT": "sandbox"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "the-wedding-dj",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "WEDDING_ROOM", "class_name": "WeddingRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WeddingRoom"] }],
+  "observability": { "enabled": true }
+}
