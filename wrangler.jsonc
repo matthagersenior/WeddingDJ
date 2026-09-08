@@ -13,8 +13,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "the-wedding-dj",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_name": "wedding_dj",
+      "database_id": "29536bd8-9116-4982-b346-437c7accc076",
       "migrations_dir": "migrations"
     }
   ],
