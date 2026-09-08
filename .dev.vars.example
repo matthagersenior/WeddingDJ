@@ -1,0 +1,19 @@
+# Required for host sessions/password hashing.
+SESSION_SECRET=replace-with-a-long-random-secret
+
+# Local development URL. Change APP_URL in wrangler.jsonc after first deploy.
+APP_URL=http://localhost:8787
+
+# Direct-to-couple Cash App. CASHAPP_QR_IMAGE_URL should point to the couple's real Cash App QR image.
+CASHAPP_URL=https://cash.app/$YOUR_CASHTAG
+CASHAPP_QR_IMAGE_URL=
+
+# Optional Square hosted checkout for Apple Pay, Google Pay, and cards.
+SQUARE_ACCESS_TOKEN=
+SQUARE_LOCATION_ID=
+SQUARE_ENVIRONMENT=sandbox
+SQUARE_WEBHOOK_SIGNATURE_KEY=
+
+# Optional Spotify integration.
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
