@@ -1,4 +1,4 @@
-name: WeddingDJ PBKDF2 Fix
+name: WeddingDJ Live Probe
 
 on:
   push:
@@ -6,62 +6,35 @@ on:
     paths:
       - '.github/workflows/runtime-diagnose.yml'
 
-permissions:
-  contents: write
-
 jobs:
-  fix-verify-deploy:
+  probe:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: Patch PBKDF2 iterations to Cloudflare-supported maximum
+      - name: Probe live WeddingDJ
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          changed = 0
-          for name in ('src/index.ts', 'src/worker.ts'):
-              p = Path(name)
-              text = p.read_text()
-              n = text.count('iterations: 150_000')
-              if n:
-                  text = text.replace('iterations: 150_000', 'iterations: 100_000')
-                  p.write_text(text)
-                  changed += n
-          if changed < 1:
-              raise SystemExit('expected PBKDF2 150_000 iteration setting was not found')
-          print(f'patched {changed} PBKDF2 iteration setting(s)')
-          PY
-      - run: npm install --ignore-scripts
-      - run: npm run check
-      - name: Commit runtime fix
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/index.ts src/worker.ts
-          git commit -m "Fix Cloudflare PBKDF2 iteration limit"
-          git push
-      - name: Deploy fixed WeddingDJ
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: e897b41674220f8202bd70d75c5235ed
-          wranglerVersion: "4.130.0"
-          preCommands: wrangler d1 migrations apply DB --remote
-          secrets: |
-            SESSION_SECRET
-        env:
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-      - name: Verify live runtime
-        shell: bash
-        run: |
-          set -e
-          echo "health=$(curl -sS -o /tmp/health -w '%{http_code}' https://weddingdj.matthagersr.workers.dev/health)"
-          echo "guest=$(curl -sS -o /tmp/guest -w '%{http_code}' https://weddingdj.matthagersr.workers.dev/e/michael-marisa)"
-          DIAG=$(curl -fsS https://weddingdj.matthagersr.workers.dev/__weddingdj_runtime_diag_20260908)
-          echo "$DIAG"
-          node -e "const x=JSON.parse(process.argv[1]); if(!x.ok||!x.pbkdf2_ok||x.event_exists!==true) process.exit(1)" "$DIAG"
+          set +e
+          BASE='https://weddingdj.matthagersr.workers.dev'
+          health=$(curl -sS -o /tmp/health -w '%{http_code}' "$BASE/health")
+          guest=$(curl -sS -o /tmp/guest -w '%{http_code}' "$BASE/e/michael-marisa")
+          setup=$(curl -sS -o /tmp/setup -w '%{http_code}' "$BASE/setup")
+          echo "health=$health guest=$guest setup=$setup"
+          echo "hero=$(grep -c 'data-carousel=\"hero\"' /tmp/guest || true)"
+          echo "gallery=$(grep -c 'data-carousel=\"gallery\"' /tmp/guest || true)"
+          echo "setup_photo=$(grep -c 'auth-photo' /tmp/setup || true)"
+          echo '--- guest prefix ---'
+          head -c 1200 /tmp/guest || true
+          echo
+          echo '--- photo statuses ---'
+          failed=0
+          for i in 0 1 2 3 4 5; do
+            code=$(curl -sS -o /tmp/photo-$i -w '%{http_code}' "$BASE/media/wedding/$i.jpeg")
+            ctype=$(curl -sSI "$BASE/media/wedding/$i.jpeg" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print $2}' | tail -1)
+            size=$(wc -c </tmp/photo-$i)
+            echo "photo_$i status=$code type=${ctype:-unknown} bytes=$size"
+            [ "$code" = "200" ] || failed=1
+          done
+          echo '--- setup prefix ---'
+          head -c 600 /tmp/setup || true
+          echo
+          exit $failed
