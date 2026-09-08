@@ -3,6 +3,7 @@
   "name": "weddingdj",
   "main": "src/worker.ts",
   "compatibility_date": "2026-09-08",
+  "account_id": "e897b41674220f8202bd70d75c5235ed",
   "workers_dev": true,
   "vars": {
     "APP_URL": "http://localhost:8787",
