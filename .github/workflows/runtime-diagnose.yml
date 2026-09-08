@@ -9,41 +9,13 @@ on:
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: e897b41674220f8202bd70d75c5235ed
-      D1_DATABASE_ID: 29536bd8-9116-4982-b346-437c7accc076
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - run: npm install --ignore-scripts
-      - name: Load latest host session privately
+      - name: Check public runtime paths
         shell: bash
         run: |
-          curl -fsS -X POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database/$D1_DATABASE_ID/query" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data '{"sql":"SELECT id FROM sessions ORDER BY created_at DESC LIMIT 1"}' \
-            > /tmp/session.json
-          SID=$(node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/session.json','utf8'));process.stdout.write(x?.result?.[0]?.results?.[0]?.id||'')")
-          test -n "$SID"
-          echo "::add-mask::$SID"
-          echo "SID=$SID" >> "$GITHUB_ENV"
-      - name: Capture authenticated dashboard exception
-        shell: bash
-        run: |
-          set +e
-          timeout 22s npx wrangler tail weddingdj --format json > /tmp/tail.log 2>&1 &
-          TAIL_PID=$!
-          sleep 4
+          set -e
           echo "health=$(curl -sS -o /tmp/health -w '%{http_code}' https://weddingdj.matthagersr.workers.dev/health)"
           echo "guest=$(curl -sS -o /tmp/guest -w '%{http_code}' https://weddingdj.matthagersr.workers.dev/e/michael-marisa)"
-          echo "dashboard=$(curl -sS -o /tmp/dashboard -w '%{http_code}' -H \"Cookie: session=$SID\" https://weddingdj.matthagersr.workers.dev/dashboard/michael-marisa)"
-          sleep 6
-          wait $TAIL_PID
-          echo '--- worker tail ---'
-          cat /tmp/tail.log
-          echo '--- dashboard response prefix ---'
-          head -c 500 /tmp/dashboard || true
+          echo '--- diagnostic ---'
+          curl -sS https://weddingdj.matthagersr.workers.dev/__weddingdj_runtime_diag_20260908
+          echo
