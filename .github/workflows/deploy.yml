@@ -12,7 +12,7 @@ jobs:
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: e897b41674220f8202bd70d75c5235ed
           wranglerVersion: "4.130.0"
           preCommands: wrangler d1 migrations apply DB --remote
           secrets: |
