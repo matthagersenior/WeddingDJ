@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'src/worker.ts'
+      - '.host-login-deploy-trigger'
 
 concurrency:
   group: weddingdj-production
