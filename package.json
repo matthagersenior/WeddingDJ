@@ -8,8 +8,8 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck",
-    "db:migrate:local": "wrangler d1 migrations apply the-wedding-dj --local",
-    "db:migrate:remote": "wrangler d1 migrations apply the-wedding-dj --remote"
+    "db:migrate:local": "wrangler d1 migrations apply wedding_dj --local",
+    "db:migrate:remote": "wrangler d1 migrations apply wedding_dj --remote"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260908.1",
