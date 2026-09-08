@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'src/worker.ts'
       - '.github/workflows/deploy.yml'
 
 concurrency:
@@ -12,7 +13,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --ignore-scripts
+      - run: npm run check
+
   deploy:
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -27,3 +39,18 @@ jobs:
             SESSION_SECRET
         env:
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      - name: Smoke test live WeddingDJ
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://weddingdj.matthagersr.workers.dev'
+          curl --retry 10 --retry-all-errors --retry-delay 2 -fsS "$BASE/health" >/tmp/health.json
+          curl --retry 10 --retry-all-errors --retry-delay 2 -fsS "$BASE/e/michael-marisa" >/tmp/guest.html
+          grep -q 'data-carousel="hero"' /tmp/guest.html
+          grep -q 'data-carousel="gallery"' /tmp/guest.html
+          for i in 0 1 2 3 4 5; do
+            curl --retry 10 --retry-all-errors --retry-delay 2 -fsS -o /dev/null "$BASE/media/wedding/$i.jpeg"
+          done
+          curl --retry 10 --retry-all-errors --retry-delay 2 -fsS "$BASE/setup" >/tmp/setup.html
+          grep -q 'auth-photo' /tmp/setup.html
+          echo 'WeddingDJ production smoke test passed.'
