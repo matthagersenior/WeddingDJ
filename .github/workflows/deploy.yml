@@ -2,6 +2,10 @@ name: Deploy WeddingDJ
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/worker.ts'
 
 concurrency:
   group: weddingdj-production
@@ -43,7 +47,9 @@ jobs:
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
             if curl -fsS "$BASE/e/michael-marisa" >/tmp/guest.html \
               && grep -q 'data-carousel="hero"' /tmp/guest.html \
-              && grep -q 'data-carousel="gallery"' /tmp/guest.html; then
+              && grep -q 'data-carousel="gallery"' /tmp/guest.html \
+              && grep -q 'href="/auth/login"' /tmp/guest.html \
+              && grep -q '>Host Login<' /tmp/guest.html; then
               ready=1
               break
             fi
@@ -55,6 +61,16 @@ jobs:
           for i in 0 1 2 3 4 5; do
             curl --retry 10 --retry-all-errors --retry-delay 2 -fsS -o /dev/null "$BASE/media/wedding/$i.jpeg"
           done
-          curl --retry 10 --retry-all-errors --retry-delay 2 -fsS "$BASE/setup" >/tmp/setup.html
-          grep -q 'auth-photo' /tmp/setup.html
+          curl --retry 10 --retry-all-errors --retry-delay 2 -fsS "$BASE/auth/login" >/tmp/login.html
+          grep -q 'auth-photo' /tmp/login.html
+
+          setup_status=$(curl -sS -o /tmp/setup.html -D /tmp/setup.headers -w '%{http_code}' "$BASE/setup")
+          if [ "$setup_status" = "200" ]; then
+            grep -q 'auth-photo' /tmp/setup.html
+          elif [ "$setup_status" = "302" ]; then
+            grep -qi '^location: /auth/login' /tmp/setup.headers
+          else
+            echo "Unexpected /setup status: $setup_status"
+            exit 1
+          fi
           echo 'WeddingDJ production smoke test passed.'
